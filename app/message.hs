@@ -3,7 +3,7 @@ module Main where
 import Data.Bits (xor)
 import Data.Char (chr, ord)
 import System.Random
-import System.IO (hFlush, stdout)
+import System.IO (hFlush, stdout, writeFile)
 
 -- Convert a string to a list of integers (based on ASCII values)
 stringToInts :: String -> [Int]
@@ -21,6 +21,10 @@ xorProcess message key = intsToString $ zipWith xor (stringToInts message) key
 generateKey :: Int -> IO [Int]
 generateKey size = mapM (\_ -> randomRIO (0, 255)) [1 .. size]
 
+-- Save the key to a file
+saveKeyToFile :: [Int] -> FilePath -> IO ()
+saveKeyToFile key filename = writeFile filename (show key)
+
 -- Main function to demonstrate encryption and decryption
 main :: IO ()
 main = do
@@ -33,6 +37,10 @@ main = do
   -- Generate a random key
   key <- generateKey (length message)
   putStrLn $ "Generated Key: " ++ show key
+
+  -- Save the key to a file
+  saveKeyToFile key "key.txt"
+  putStrLn "Key saved to key.txt"
 
   -- Encrypt the message
   let encrypted = xorProcess message key
