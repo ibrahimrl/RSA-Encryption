@@ -3,6 +3,7 @@ module Main where
 import Data.Bits (xor)
 import Data.Char (chr, ord)
 import System.Random
+import System.IO (hFlush, stdout)
 
 -- Convert a string to a list of integers (based on ASCII values)
 stringToInts :: String -> [Int]
@@ -23,7 +24,10 @@ generateKey size = mapM (\_ -> randomRIO (0, 255)) [1 .. size]
 -- Main function to demonstrate encryption and decryption
 main :: IO ()
 main = do
-  let message = "Hello Universe!"
+  putStr "Enter the message: "
+  hFlush stdout
+  message <- getLine
+
   putStrLn $ "Original message: " ++ message
 
   -- Generate a random key
