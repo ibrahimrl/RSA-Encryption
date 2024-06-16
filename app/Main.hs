@@ -1,77 +1,110 @@
+module Main where
 
-
+import qualified Data.Map.Strict as Map
+import Data.Maybe (fromMaybe)
+import System.IO (hFlush, stdout)
+import System.Random
 import Data.Bits (shiftR)
-import System.Random (randomRIO)
+import Data.Char (ord, chr)
+import RSA
 
--- Compute the greatest common divisor (GCD) using Euclid's algorithm
-gcd' :: Integer -> Integer -> Integer
-gcd' a 0 = a
-gcd' a b = gcd' b (a `mod` b)
-
--- Extended Euclidean algorithm to find the modular inverse
-extendedEuclid :: Integer -> Integer -> (Integer, Integer, Integer)
-extendedEuclid a 0 = (a, 1, 0)
-extendedEuclid a b =
-  let (g, x1, y1) = extendedEuclid b (a `mod` b)
-      x = y1
-      y = x1 - (a `div` b) * y1
-   in (g, x, y)
-
--- Find the modular inverse of e mod phi
-modInverse :: Integer -> Integer -> Integer
-modInverse e phi =
-  let (_, x, _) = extendedEuclid e phi
-   in (x `mod` phi + phi) `mod` phi
-
--- Generate a random prime number in the range
-randomPrime :: Integer -> Integer -> IO Integer
-randomPrime low high = do
-  p <- randomRIO (low, high)
-  if isPrime p then return p else randomPrime low high
-
--- Check if a number is prime
-isPrime :: Integer -> Bool
-isPrime 1 = False
-isPrime n = null [x | x <- [2 .. (floor . sqrt . fromIntegral) n], n `mod` x == 0]
-
--- Generate RSA keys
-generateKeys :: IO ((Integer, Integer), (Integer, Integer))
-generateKeys = do
-  p <- randomPrime 1000 5000
-  q <- randomPrime 1000 5000
-  let n = p * q
-  let phi = (p - 1) * (q - 1)
-  e <- randomRIO (2, phi - 1)
-  let d = modInverse e phi
-  return ((e, n), (d, n))
-
--- Modular exponentiation
-powMod :: Integer -> Integer -> Integer -> Integer
-powMod base exp modulus = powMod' base exp modulus 1
-  where
-    powMod' _ 0 _ acc = acc
-    powMod' b e m acc
-      | e `mod` 2 == 1 = powMod' (b * b `mod` m) (e `div` 2) m (acc * b `mod` m)
-      | otherwise = powMod' (b * b `mod` m) (e `div` 2) m acc
-
--- Encrypt a message
-encrypt :: Integer -> (Integer, Integer) -> Integer
-encrypt m (e, n) = powMod m e n
-
--- Decrypt a message
-decrypt :: Integer -> (Integer, Integer) -> Integer
-decrypt c (d, n) = powMod c d n
-
--- Main function
+-- Main function to demonstrate encryption and decryption
 main :: IO ()
 main = do
+  -- Generate RSA keys
   (publicKey, privateKey) <- generateKeys
   putStrLn $ "Public Key: " ++ show publicKey
   putStrLn $ "Private Key: " ++ show privateKey
 
-  let message = 1234 -- Example message
-  let encryptedMessage = encrypt message publicKey
-  putStrLn $ "Encrypted Message: " ++ show encryptedMessage
+  -- Save the keys to separate files
+  savePublicKeyToFile publicKey "public_key.txt"
+  savePrivateKeyToFile privateKey "private_key.txt"
+  putStrLn "Public key saved to public_key.txt"
+  putStrLn "Private key saved to private_key.txt"
 
-  let decryptedMessage = decrypt encryptedMessage privateKey
-  putStrLn $ "Decrypted Message: " ++ show decryptedMessage
+  -- Initialize the encrypted messages map
+  let encryptedMessages = Map.empty :: Map.Map Int [Integer]
+      keys = []
+
+  -- Enter the loop to allow multiple entries
+  mainLoop encryptedMessages keys 1 publicKey privateKey
+
+-- Loop function to handle multiple entries
+mainLoop :: Map.Map Int [Integer] -> [(Int, [Integer])] -> Int -> (Integer, Integer) -> (Integer, Integer) -> IO ()
+mainLoop encryptedMessages keys index publicKey privateKey = do
+  putStr "Do you want to encrypt or decrypt a message? (e/d): "
+  hFlush stdout
+  action <- getLine
+
+  case action of
+    "e" -> do
+      putStr "Enter the message: "
+      hFlush stdout
+      message <- getLine
+
+      putStrLn $ "Original message: " ++ message
+
+      -- Encrypt the message
+      let encrypted = encryptString message publicKey
+      putStrLn $ "Encrypted message: " ++ show encrypted
+
+      -- Add the encrypted message to the map
+      let updatedMessages = Map.insert index encrypted encryptedMessages
+
+      -- Save the encrypted messages to a file
+      saveMessagesToFile updatedMessages "messages.txt"
+      putStrLn "Encrypted messages saved to messages.txt"
+
+      -- Continue the loop
+      mainLoop updatedMessages keys (index + 1) publicKey privateKey
+    "d" -> do
+      putStr "Enter the index of the message to decrypt: "
+      hFlush stdout
+      indexStr <- getLine
+      let idx = read indexStr :: Int
+
+      -- Load the encrypted messages from the file
+      storedMessages <- loadMessagesFromFile "messages.txt"
+
+      -- Find the encrypted message by index
+      let encryptedMessage = fromMaybe [] (Map.lookup idx storedMessages)
+
+      -- Decrypt the message
+      let decrypted = decryptString encryptedMessage privateKey
+      putStrLn $ "Decrypted message: " ++ decrypted
+
+      -- Continue the loop
+      mainLoop encryptedMessages keys index publicKey privateKey
+    _ -> do
+      putStrLn "Invalid action. Please choose 'encrypt' or 'decrypt'."
+      mainLoop encryptedMessages keys index publicKey privateKey
+
+-- Save the public key to a file
+savePublicKeyToFile :: (Integer, Integer) -> FilePath -> IO ()
+savePublicKeyToFile publicKey filename = writeFile filename (show publicKey)
+
+-- Save the private key to a file
+savePrivateKeyToFile :: (Integer, Integer) -> FilePath -> IO ()
+savePrivateKeyToFile privateKey filename = writeFile filename (show privateKey)
+
+-- Load the public key from a file
+loadPublicKeyFromFile :: FilePath -> IO (Integer, Integer)
+loadPublicKeyFromFile filename = do
+  content <- readFile filename
+  return (read content)
+
+-- Load the private key from a file
+loadPrivateKeyFromFile :: FilePath -> IO (Integer, Integer)
+loadPrivateKeyFromFile filename = do
+  content <- readFile filename
+  return (read content)
+
+-- Save the encrypted messages to a file
+saveMessagesToFile :: Map.Map Int [Integer] -> FilePath -> IO ()
+saveMessagesToFile messages filename = writeFile filename (show (Map.toList messages))
+
+-- Load the encrypted messages from a file
+loadMessagesFromFile :: FilePath -> IO (Map.Map Int [Integer])
+loadMessagesFromFile filename = do
+  content <- readFile filename
+  return (Map.fromList (read content))
