@@ -23,15 +23,14 @@ main = do
   putStrLn "Private key saved to private_key.txt"
 
   -- Initialize the encrypted messages map
-  let encryptedMessages = Map.empty :: Map.Map Int [Integer]
-      keys = []
+  let encryptedMessages = Map.empty :: Map.Map String [Integer]
 
   -- Enter the loop to allow multiple entries
-  mainLoop encryptedMessages keys 1 publicKey privateKey
+  mainLoop encryptedMessages publicKey privateKey
 
 -- Loop function to handle multiple entries
-mainLoop :: Map.Map Int [Integer] -> [(Int, [Integer])] -> Int -> (Integer, Integer) -> (Integer, Integer) -> IO ()
-mainLoop encryptedMessages keys index publicKey privateKey = do
+mainLoop :: Map.Map String [Integer] -> (Integer, Integer) -> (Integer, Integer) -> IO ()
+mainLoop encryptedMessages publicKey privateKey = do
   putStr "Do you want to encrypt or decrypt a message? (e/d): "
   hFlush stdout
   action <- getLine
@@ -49,35 +48,29 @@ mainLoop encryptedMessages keys index publicKey privateKey = do
       putStrLn $ "Encrypted message: " ++ show encrypted
 
       -- Add the encrypted message to the map
-      let updatedMessages = Map.insert index encrypted encryptedMessages
+      let updatedMessages = Map.insert message encrypted encryptedMessages
 
       -- Save the encrypted messages to a file
       saveMessagesToFile updatedMessages "messages.txt"
       putStrLn "Encrypted messages saved to messages.txt"
 
       -- Continue the loop
-      mainLoop updatedMessages keys (index + 1) publicKey privateKey
+      mainLoop updatedMessages publicKey privateKey
     "d" -> do
-      putStr "Enter the index of the message to decrypt: "
+      putStr "Enter the encrypted message: "
       hFlush stdout
-      indexStr <- getLine
-      let idx = read indexStr :: Int
-
-      -- Load the encrypted messages from the file
-      storedMessages <- loadMessagesFromFile "messages.txt"
-
-      -- Find the encrypted message by index
-      let encryptedMessage = fromMaybe [] (Map.lookup idx storedMessages)
+      encryptedMessageStr <- getLine
+      let encryptedMessage = read encryptedMessageStr :: [Integer]
 
       -- Decrypt the message
       let decrypted = decryptString encryptedMessage privateKey
       putStrLn $ "Decrypted message: " ++ decrypted
 
       -- Continue the loop
-      mainLoop encryptedMessages keys index publicKey privateKey
+      mainLoop encryptedMessages publicKey privateKey
     _ -> do
       putStrLn "Invalid action. Please choose 'encrypt' or 'decrypt'."
-      mainLoop encryptedMessages keys index publicKey privateKey
+      mainLoop encryptedMessages publicKey privateKey
 
 -- Save the public key to a file
 savePublicKeyToFile :: (Integer, Integer) -> FilePath -> IO ()
@@ -100,11 +93,11 @@ loadPrivateKeyFromFile filename = do
   return (read content)
 
 -- Save the encrypted messages to a file
-saveMessagesToFile :: Map.Map Int [Integer] -> FilePath -> IO ()
+saveMessagesToFile :: Map.Map String [Integer] -> FilePath -> IO ()
 saveMessagesToFile messages filename = writeFile filename (show (Map.toList messages))
 
 -- Load the encrypted messages from a file
-loadMessagesFromFile :: FilePath -> IO (Map.Map Int [Integer])
+loadMessagesFromFile :: FilePath -> IO (Map.Map String [Integer])
 loadMessagesFromFile filename = do
   content <- readFile filename
   return (Map.fromList (read content))
