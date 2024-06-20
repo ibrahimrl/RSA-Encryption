@@ -2,7 +2,7 @@
 
 ## Introduction
 
-The RSA Public Key Encryption System is a Haskell implementation of the RSA encryption and decryption algorithm, which is a cornerstone of modern cryptographic systems. RSA, named after Rivest, Shamir, and Adleman, the inventors of the technique, utilizes a set of two keys: a public key for encryption and a private key for decryption. This implementation provides a functional example of public key cryptography, demonstrating the generation, encryption, and decryption processes, as well as the handling and storage of keys and encrypted data.
+The RSA Public Key Encryption System is a Haskell-based implementation of the RSA algorithm, showcasing key generation, encryption, and decryption. Named after its inventors Rivest, Shamir, and Adleman, this system uses a public and a private key to demonstrate public key cryptography and data security practices.
 
 ## Project Structure
 
