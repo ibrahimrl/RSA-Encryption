@@ -23,6 +23,37 @@ The RSA Public Key Encryption System is a Haskell-based implementation of the RS
   - [LICENSE](LICENSE): Provides the licensing information.
   - [CHANGELOG.md](CHANGELOG.md): Documents the chronological development and updates of the project.
 
+## Function Descriptions
+
+### [RSA.hs](app/RSA.hs) Functions
+
+- **`gcd`**: Computes the greatest common divisor of two integers using Euclid's algorithm, ensuring they are coprimes.
+- **`extendedEuclid`**: Implements the Extended Euclidean Algorithm to find integers x and y such that they satisfy the equation ax + by = gcd(a, b).
+- **`modInverse`**: Calculates the modular inverse of an integer e modulo φ, essential for deriving the private key in RSA.
+- **`randomPrime`**: Generates a random prime number within a specified range, crucial for creating the RSA modulus.
+- **`isPrime`**: Checks if a number is prime, a basic utility used during the generation of prime numbers for RSA.
+- **`generateKeys`**: Generates a pair of RSA keys (public and private) using random prime numbers.
+- **`findCoprime`**: Identifies an integer coprime to a given number, used to find a suitable public key exponent.
+- **`powMod`**: Performs modular exponentiation, which is fundamental for RSA encryption and decryption operations.
+- **`encrypt`**: Encrypts an integer message using a public key, applying the RSA encryption formula.
+- **`decrypt`**: Decrypts an encrypted integer using a private key, reversing the RSA encryption process.
+- **`stringToInts`**: Converts a string to a list of integers based on ASCII values, preparing text for encryption.
+- **`intsToString`**: Converts a list of integers back to a string, reconstructing text from decrypted ASCII values.
+- **`encryptString`**: Encrypts a string by converting it to integers and encrypting each integer.
+- **`decryptString`**: Decrypts a list of encrypted integers to a string, combining decryption and ASCII conversion.
+
+### [Main.hs](app/Main.hs) Functions
+
+- **`main`**: Initializes the application, generates keys, and starts the interactive encryption/decryption session.
+- **`mainLoop`**: Manages user interaction for ongoing encryption and decryption tasks within a loop.
+- **`savePublicKeyToFile`**: Saves the RSA public key to a file.
+- **`savePrivateKeyToFile`**: Saves the RSA private key to a file.
+- **`loadPublicKeyFromFile`**: Loads the RSA public key from a file.
+- **`loadPrivateKeyFromFile`**: Loads the RSA private key from a file.
+- **`saveMessagesToFile`**: Saves encrypted messages to a file for persistent storage.
+- **`loadMessagesFromFile`**: Loads encrypted messages from a file, allowing for decryption or review.
+
+
 ## Setup
 
 To set up the RSA Public Key Encryption System, ensure you have the GHC (Glasgow Haskell Compiler) and Cabal installed. Proceed with the following steps:
